@@ -28,8 +28,7 @@ export class AuthService {
       data: {
         email: dto.email,
         password: hashed,
-        name: dto.name,
-        avatar: dto.avatar || null,
+        name: dto?.name || '',
       },
     });
 
