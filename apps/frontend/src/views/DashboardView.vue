@@ -1,171 +1,85 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useURLStore } from '@/stores/url'
+import Swal from 'sweetalert2'
 
 const auth = useAuthStore()
-const router = useRouter()
-
-// Sample data - replace with actual API calls
-const userStats = ref({
-  totalUrls: 12,
-  totalClicks: 2547,
-  activeUrls: 10
-})
-
-const userUrls = ref([
-  {
-    id: 1,
-    originalUrl: 'https://www.example.com/very-long-url-that-needs-shortening',
-    shortUrl: 'https://trimurl.app/abc123',
-    clicks: 45,
-    createdAt: '2024-01-15',
-    isActive: true
-  },
-  {
-    id: 2,
-    originalUrl: 'https://github.com/username/awesome-project-repository',
-    shortUrl: 'https://trimurl.app/xyz789',
-    clicks: 123,
-    createdAt: '2024-01-10',
-    isActive: true
-  },
-  {
-    id: 3,
-    originalUrl: 'https://docs.google.com/document/d/very-long-document-id',
-    shortUrl: 'https://trimurl.app/def456',
-    clicks: 78,
-    createdAt: '2024-01-08',
-    isActive: false
-  },
-  {
-    id: 4,
-    originalUrl: 'https://www.another-example.com/some/long/path/to/content',
-    shortUrl: 'https://trimurl.app/ghi789',
-    clicks: 234,
-    createdAt: '2024-01-05',
-    isActive: true
-  },
-  {
-    id: 5,
-    originalUrl: 'https://stackoverflow.com/questions/12345/how-to-do-something',
-    shortUrl: 'https://trimurl.app/jkl012',
-    clicks: 67,
-    createdAt: '2024-01-03',
-    isActive: true
-  },
-  {
-    id: 6,
-    originalUrl: 'https://medium.com/@author/very-long-article-title-here',
-    shortUrl: 'https://trimurl.app/mno345',
-    clicks: 89,
-    createdAt: '2024-01-01',
-    isActive: false
-  }
-])
+const url = useURLStore()
 
 const newUrl = ref('')
 const showAddForm = ref(false)
 
 function copyToClipboard(url: string) {
   navigator.clipboard.writeText(url)
-  alert('Copied to clipboard!')
-}
-
-function toggleUrlStatus(id: number) {
-  const url = userUrls.value.find(u => u.id === id)
-  if (url) {
-    url.isActive = !url.isActive
-    updateStats()
-  }
-}
-
-function deleteUrl(id: number) {
-  if (confirm('Are you sure you want to delete this URL?')) {
-    userUrls.value = userUrls.value.filter(u => u.id !== id)
-    updateStats()
-  }
-}
-
-function addNewUrl() {
-  if (newUrl.value.trim()) {
-    const newUrlObj = {
-      id: Date.now(),
-      originalUrl: newUrl.value,
-      shortUrl: `https://trimurl.app/${generateShortCode()}`,
-      clicks: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      isActive: true
-    }
-    userUrls.value.unshift(newUrlObj)
-    newUrl.value = ''
-    showAddForm.value = false
-    updateStats()
-  }
-}
-
-function generateShortCode() {
-  return Math.random().toString(36).substring(2, 8)
-}
-
-function updateStats() {
-  userStats.value = {
-    totalUrls: userUrls.value.length,
-    totalClicks: userUrls.value.reduce((sum, url) => sum + url.clicks, 0),
-    activeUrls: userUrls.value.filter(url => url.isActive).length
-  }
+  Swal.fire({
+  toast: true,
+  position: 'top-end',
+  icon: 'success',
+  title: 'URL Copied to clipboard',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+})
 }
 
 onMounted(() => {
-  updateStats()
+  url.fetchUrls()
 })
+
+function shorten() {
+  if (!newUrl.value.trim()) return
+  url.shortenUrl(newUrl.value)
+  newUrl.value = ''
+  showAddForm.value = false
+}
+
+async function releaseUrl(id: string) {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Do you really want to release this URL?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Yes, release it!',
+  })
+
+  if (result.isConfirmed) {
+    try {
+      await url.releaseUrl(id)
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Released!',
+        text: 'The URL was released successfully.',
+        timer: 2000,
+        showConfirmButton: false,
+      })
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Failed to release the URL. Please try again.',
+      })
+    }
+  }
+}
 </script>
 
 <template>
   <div class="page-wrapper">
-    <!-- Header -->
     <div class="page-header">
       <div class="container">
         <h1>Dashboard</h1>
         <div class="user-info">
-          <span>Welcome, {{ auth.user?.email }}</span>
+          <span>Welcome, {{ auth.user.email }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="page-content">
       <div class="container">
-        
-        <!-- User Profile Section -->
-        <div class="profile-section">
-          <div class="profile-card">
-            <div class="profile-avatar">
-              {{ auth.user?.email?.charAt(0).toUpperCase() }}
-            </div>
-            <div class="profile-info">
-              <h2>{{ auth.user?.email }}</h2>
-              <p class="member-since">Member since January 2024</p>
-            </div>
-          </div>
-
-          <!-- Statistics Cards -->
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-value">{{ userStats.totalUrls }}</div>
-              <div class="stat-label">Total URLs</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">{{ userStats.totalClicks }}</div>
-              <div class="stat-label">Total Clicks</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">{{ userStats.activeUrls }}</div>
-              <div class="stat-label">Active URLs</div>
-            </div>
-          </div>
-        </div>
-
         <!-- My URLs Section -->
         <div class="urls-section">
           <div class="section-header">
@@ -178,63 +92,36 @@ onMounted(() => {
           <!-- Add URL Form -->
           <div v-if="showAddForm" class="add-url-form">
             <div class="form-group">
-              <input 
-                v-model="newUrl" 
-                type="url" 
-                placeholder="Enter URL to shorten..."
-                class="url-input"
-                @keyup.enter="addNewUrl"
-              />
-              <button @click="addNewUrl" class="btn success">Create Short URL</button>
+              <input v-model="newUrl" type="url" placeholder="Enter URL to shorten..." />
+              <button @click="shorten" class="btn success">Create Short URL</button>
             </div>
           </div>
 
           <!-- URLs List -->
           <div class="urls-list">
-            <div v-for="url in userUrls" :key="url.id" class="url-item">
+            <div v-for="url in url.urls" :key="url.id" class="url-item">
               <div class="url-info">
-                <div class="url-original">
-                  <strong>Original:</strong>
-                  <span :title="url.originalUrl">{{ url.originalUrl }}</span>
-                </div>
+                <div class="url-original"><strong>Original:</strong> {{ url.original }}</div>
                 <div class="url-short">
                   <strong>Short:</strong>
-                  <a :href="url.shortUrl" target="_blank">{{ url.shortUrl }}</a>
-                  <button @click="copyToClipboard(url.shortUrl)" class="copy-btn">
-                    📋
-                  </button>
+                  <a :href="`${url.shortUrl}`" target="_blank">{{ url.shortUrl }}</a>
                 </div>
                 <div class="url-meta">
-                  <span class="clicks">{{ url.clicks }} clicks</span>
-                  <span class="created">Created: {{ url.createdAt }}</span>
-                  <span :class="['status', url.isActive ? 'active' : 'inactive']">
-                    {{ url.isActive ? 'Active' : 'Inactive' }}
-                  </span>
+                  <span>Created: {{ new Date(url.createdAt).toLocaleDateString() }}</span>
                 </div>
-              </div>
-              <div class="url-actions">
-                <button 
-                  @click="toggleUrlStatus(url.id)" 
-                  :class="['btn', url.isActive ? 'warning' : 'success']"
-                >
-                  {{ url.isActive ? 'Deactivate' : 'Activate' }}
-                </button>
-                <button @click="deleteUrl(url.id)" class="btn danger">Delete</button>
+                <div class="url-actions">
+                  <button @click="releaseUrl(url.id)" class="btn danger">Release</button>
+                  <button @click="copyToClipboard(url.shortUrl)" class="copy-btn">Copy 📋</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div v-if="userUrls.length === 0" class="empty-state">
+          <div v-if="url.urls.length === 0" class="empty-state">
             <p>No URLs created yet. Create your first shortened URL!</p>
             <button @click="showAddForm = true" class="btn primary">Get Started</button>
           </div>
         </div>
-
-        <!-- Extra content to ensure scrolling -->
-        <div style="height: 200px; display: flex; align-items: center; justify-content: center; color: #6c757d;">
-          <p>End of dashboard content - scroll test</p>
-        </div>
-
       </div>
     </div>
   </div>
@@ -281,6 +168,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
+  color: #6c757d;
 }
 
 .profile-section {
@@ -417,6 +305,7 @@ onMounted(() => {
 .url-original,
 .url-short {
   margin-bottom: 0.5rem;
+  color: #343a40;
 }
 
 .url-original span,
@@ -432,17 +321,25 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.url-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .copy-btn {
-  background: none;
+  background: #a17f1d;
   border: none;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  color: white;
 }
 
 .copy-btn:hover {
-  background: #f8f9fa;
+  background: #7a6114;
 }
 
 .url-meta {
@@ -471,6 +368,10 @@ onMounted(() => {
   text-align: center;
   padding: 3rem 0;
   color: #6c757d;
+}
+
+.empty-state .btn {
+  margin-top: 1rem;
 }
 
 .btn {
@@ -513,42 +414,42 @@ onMounted(() => {
   .container {
     padding: 0 1rem;
   }
-  
+
   .page-header .container {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .profile-card {
     flex-direction: column;
     text-align: center;
     gap: 1rem;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .form-group {
     flex-direction: column;
   }
-  
+
   .url-item {
     flex-direction: column;
   }
-  
+
   .url-actions {
     align-self: stretch;
   }
-  
+
   .url-meta {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .url-short {
     flex-direction: column;
     align-items: flex-start;

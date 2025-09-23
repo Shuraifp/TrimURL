@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { LoginResponseDto } from '../../src/types/user-response';
 // import { UserResponseDto } from '../../../packages/shared/types/user-response';
 
 @Injectable()
@@ -43,7 +44,7 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto) : Promise<LoginResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
