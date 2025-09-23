@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "echo 'Looking for main.js files:' && find /opt/render/project -name '*main*' -type f && echo 'Contents of expected dist directory:' && ls -la dist/ 2>/dev/null || echo 'No dist directory found' && echo 'Attempting to start anyway...' && node dist/main",
+    "start:prod": "echo 'Looking for main.js files:' && find /opt/render/project -name '*main*' -type f && echo 'Contents of expected dist directory:' && ls -la dist/ 2>/dev/null || echo 'No dist directory found' && echo 'Attempting to start anyway...' && node dist/src/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
