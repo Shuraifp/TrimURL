@@ -6,7 +6,6 @@
         v-model="form.name"
         type="text"
         placeholder="Full Name"
-        required
         class="modern-input"
       />
     </div>
@@ -16,7 +15,6 @@
         v-model="form.email"
         type="email"
         placeholder="Enter your email"
-        required
         class="modern-input"
       />
     </div>
@@ -26,9 +24,7 @@
         v-model="form.password"
         :type="showPassword ? 'text' : 'password'"
         placeholder="Create a strong password"
-        required
         class="modern-input"
-        @input="checkPasswordStrength"
       />
       <button type="button" class="password-toggle" @click="showPassword = !showPassword">
         {{ showPassword ? '🙈' : '👁️' }}
@@ -54,7 +50,6 @@
         v-model="form.confirmPassword"
         type="password"
         placeholder="Confirm your password"
-        required
         class="modern-input"
         :class="{
           'password-mismatch': form.confirmPassword && form.password !== form.confirmPassword,
@@ -133,12 +128,11 @@ const isFormValid = computed(() => {
   )
 })
 
-const checkPasswordStrength = () => {
-  // Trigger reactivity for password strength indicator
-}
-
 const onSubmit = async () => {
-  if (!isFormValid.value) return
+  if (!isFormValid.value) {
+    error.value = 'Please fill out the form correctly.'
+    return
+  }
 
   loading.value = true
   error.value = ''

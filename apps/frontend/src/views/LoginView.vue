@@ -31,7 +31,7 @@
     <p v-if="error" class="error">{{ error }}</p>
 
     <div class="auth-footer">
-      <a href="#" class="forgot-link">Forgot your password?</a>
+      <a href="#" class="forgot-link">Password recovery will avail soon!</a>
     </div>
   </AuthForm>
 </template>

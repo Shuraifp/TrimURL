@@ -1,13 +1,25 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useURLStore } from '@/stores/url'
 
-const auth = useAuthStore()
 const router = useRouter()
+const auth = useAuthStore()
+const url = useURLStore()
+const newUrl = ref('')
 
 function goToLogin() {
   router.push('/login')
+}
+
+function redirect() {
+  router.push('/dashboard')
+}
+function shortenUrl() {
+  if (!newUrl.value.trim()) return
+  url.shortenUrl(newUrl.value)
+  newUrl.value = ''
 }
 </script>
 
@@ -17,8 +29,7 @@ function goToLogin() {
       <section v-if="!auth.isAuthenticated" class="banner">
         <h1>Welcome to TrimURL</h1>
         <p>
-          Securely shorten your URLs with authentication. Create an account to manage your links and
-          track them with ease.
+          Securely shorten your URLs with authentication. Create an account to manage your links.
         </p>
         <div class="actions">
           <button @click="goToLogin" class="btn secondary">Get Started ></button>
@@ -28,8 +39,11 @@ function goToLogin() {
       <section v-else class="shortener">
         <h2>Shorten a URL</h2>
         <div class="shortener-box">
-          <input type="text" placeholder="Enter long URL here" />
-          <button class="btn success">Shorten</button>
+          <input v-model="newUrl" type="url" placeholder="Enter long URL here" />
+          <div class="box-actions">
+            <button @click="redirect" class="btn info">My URLs</button>
+            <button @click="shortenUrl" class="btn success">Shorten</button>
+          </div>
         </div>
       </section>
     </div>
@@ -70,7 +84,6 @@ function goToLogin() {
   max-width: 400px;
 }
 
-
 .banner {
   max-width: 600px;
 }
@@ -99,6 +112,8 @@ function goToLogin() {
   width: 100%;
   max-width: 500px;
   text-align: left;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  height: fit-content;
 }
 
 .shortener h2 {
@@ -107,6 +122,7 @@ function goToLogin() {
 
 .shortener-box {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
@@ -116,6 +132,14 @@ function goToLogin() {
   padding: 0.75rem;
   border: none;
   border-radius: 0.5rem;
+}
+
+.box-actions {
+  display: flex;
+
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
 }
 
 .user-bar {
