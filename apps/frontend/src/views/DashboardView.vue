@@ -73,7 +73,7 @@ async function releaseUrl(id: string) {
       <div class="container">
         <h1>Dashboard</h1>
         <div class="user-info">
-          <span>Welcome, {{ auth.user.email }}</span>
+          <span>Welcome, {{ auth.user?.email }}</span>
         </div>
       </div>
     </div>
