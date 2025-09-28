@@ -10,7 +10,4 @@ export class RegisterDto {
 
   @IsOptional()
   name?: string;
-
-  @IsOptional()
-  avatar?: string;
 }

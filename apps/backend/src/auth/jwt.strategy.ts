@@ -6,11 +6,8 @@ import {
   StrategyOptions,
   JwtFromRequestFunction,
 } from 'passport-jwt';
+import { JwtPayload } from './dto/jwt.dto';
 
-export interface JwtPayload {
-  sub: string;
-  email: string;
-}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

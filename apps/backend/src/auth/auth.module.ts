@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtStrategy } from './jwt.strategy';
+import { PasswordService } from './password.service';
+import { UserRepository } from './repositories/user.repository';
 
 @Module({
   imports: [
@@ -13,7 +15,25 @@ import { JwtStrategy } from './jwt.strategy';
       signOptions: { expiresIn: process.env.JWT_EXPIRATION },
     }),
   ],
-  providers: [AuthService, PrismaService, JwtStrategy],
+  providers: [
+    // AuthService,
+    // PrismaService,
+    JwtStrategy,
+    // PasswordService,
+    // UserRepository,
+    {
+      provide: 'IAuthService',
+      useClass: AuthService,
+    },
+    {
+      provide: 'IUserRepository',
+      useClass: UserRepository,
+    },
+    {
+      provide: 'IPasswordService',
+      useClass: PasswordService,
+    },
+  ],
   controllers: [AuthController],
   exports: [AuthService],
 })

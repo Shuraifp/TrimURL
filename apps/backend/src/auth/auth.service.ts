@@ -2,68 +2,72 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { LoginResponseDto } from '../../src/types/user-response';
-// import { UserResponseDto } from '../../../packages/shared/types/user-response';
+import { LoginResponseDto, RegisterResponseDto } from './dto/response.dto';
+import type { IUserRepository } from './interfaces/user-repository.interface';
+import type { IPasswordService } from './interfaces/password-service.interface';
+import { IAuthService } from './interfaces/auth-service.interface';
+import { UserEntity } from './entities/user.entity';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
-    private prisma: PrismaService,
+    @Inject('IUserRepository')
+    private userRepository: IUserRepository,
+    @Inject('IPasswordService')
+    private passwordService: IPasswordService,
     private jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+  async register(dto: RegisterDto): Promise<RegisterResponseDto> {
+    const existing = await this.userRepository.findByEmail(dto.email);
     if (existing) throw new BadRequestException('Email already in use');
 
-    const hashed = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashed,
-        name: dto?.name || '',
-      },
+    const hashed = await this.passwordService.hash(dto.password);
+    const user = await this.userRepository.create({
+      email: dto.email,
+      password: hashed,
+      name: dto?.name || '',
     });
 
     return {
       message: 'Registration successful',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar,
-      },
+      user: user.toResponse(),
     };
   }
 
-  async login(dto: LoginDto) : Promise<LoginResponseDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
+  async login(dto: LoginDto): Promise<LoginResponseDto> {
+    const user = await this.validateUser(dto.email, dto.password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     const payload = { sub: user.id, email: user.email };
     const token = await this.jwtService.signAsync(payload);
 
     return {
       access_token: token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar,
-      },
+      user: user.toResponse(),
     };
+  }
+
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<UserEntity | null> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await this.passwordService.compare(
+      password,
+      user.password,
+    );
+    return isPasswordValid ? user : null;
   }
 }
