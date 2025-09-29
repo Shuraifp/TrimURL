@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { UrlService } from './url.service';
 import { AuthGuard } from '@nestjs/passport';
-import type { Response } from 'express';
 import { toURLList } from './mappers/toURLList';
 
 @Controller('url')
