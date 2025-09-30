@@ -29,9 +29,13 @@ model Url {
   id        String   @id @default(cuid())
   original  String
   shortCode String   @unique
+  clicks    Int      @default(0) 
   createdAt DateTime @default(now())
   userId    Int
   user      User    @relation(fields: [userId], references: [id])
+
+  @@index([userId])     
+  @@index([shortCode]) 
 }
 
 

@@ -12,13 +12,14 @@ import type { IUserRepository } from './interfaces/user-repository.interface';
 import type { IPasswordService } from './interfaces/password-service.interface';
 import { IAuthService } from './interfaces/auth-service.interface';
 import { UserEntity } from './entities/user.entity';
+import { AUTH_TOKENS } from './auth.tokens';
 
 @Injectable()
 export class AuthService implements IAuthService {
   constructor(
-    @Inject('IUserRepository')
+    @Inject(AUTH_TOKENS.USER_REPOSITORY)
     private userRepository: IUserRepository,
-    @Inject('IPasswordService')
+    @Inject(AUTH_TOKENS.PASSWORD_SERVICE)
     private passwordService: IPasswordService,
     private jwtService: JwtService,
   ) {}

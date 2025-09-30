@@ -6,6 +6,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { JwtStrategy } from './jwt.strategy';
 import { PasswordService } from './password.service';
 import { UserRepository } from './repositories/user.repository';
+import { AUTH_TOKENS } from './auth.tokens';
 
 @Module({
   imports: [
@@ -16,21 +17,19 @@ import { UserRepository } from './repositories/user.repository';
     }),
   ],
   providers: [
-    // AuthService,
-    // PrismaService,
+    AuthService,
+    PrismaService,
     JwtStrategy,
-    // PasswordService,
-    // UserRepository,
     {
-      provide: 'IAuthService',
+      provide: AUTH_TOKENS.AUTH_SERVICE,
       useClass: AuthService,
     },
     {
-      provide: 'IUserRepository',
+      provide: AUTH_TOKENS.USER_REPOSITORY,
       useClass: UserRepository,
     },
     {
-      provide: 'IPasswordService',
+      provide: AUTH_TOKENS.PASSWORD_SERVICE,
       useClass: PasswordService,
     },
   ],

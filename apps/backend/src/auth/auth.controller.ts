@@ -13,11 +13,12 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
 import type { IAuthService } from './interfaces/auth-service.interface';
+import { AUTH_TOKENS } from './auth.tokens';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    @Inject('IAuthService')
+    @Inject(AUTH_TOKENS.AUTH_SERVICE)
     private readonly authService: IAuthService,
   ) {}
 
