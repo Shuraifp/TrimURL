@@ -1,59 +1,67 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { nanoid } from 'nanoid';
-import { PrismaService } from 'prisma/prisma.service';
-import { URLListResponseDto } from 'src/types/url';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type { IUrlRepository } from './interfaces/url-repository.interface';
+import type { IShortCodeGenerator } from './interfaces/short-code-generator.interface';
+import type { IUrlBuilder } from './interfaces/url-builder.interface';
+import { SHORT_CODE_GENERATOR_TOKEN, URL_BUILDER_TOKEN, URL_REPOSITORY_TOKEN } from './url.tokens';
 
 @Injectable()
 export class UrlService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @Inject(URL_REPOSITORY_TOKEN)
+    private urlRepository: IUrlRepository,
+    @Inject(SHORT_CODE_GENERATOR_TOKEN)
+    private shortCodeGenerator: IShortCodeGenerator,
+    @Inject(URL_BUILDER_TOKEN)
+    private urlBuilder: IUrlBuilder,
+  ) {}
 
   async shorten(original: string, userId: string) {
-    const shortCode = nanoid(8);
-    console.log(original, 'userid ', userId);
+    const shortCode = this.shortCodeGenerator.generate();
 
-    const url = await this.prisma.url.create({
-      data: {
-        original,
-        shortCode,
-        userId: parseInt(userId),
-      },
+    const url = await this.urlRepository.create({
+      original,
+      userId: parseInt(userId),
+      shortCode,
     });
 
-    return {
-      id: url.id,
-      userId: url.userId,
-      shortUrl: `${process.env.APP_URL}/${shortCode}`,
-      original: url.original,
-      createdAt: url.createdAt,
-    };
+    return url.toResponse(this.urlBuilder.getBaseUrl());
   }
 
   async resolve(shortCode: string) {
-    const url = await this.prisma.url.findUnique({
-      where: { shortCode },
-    });
+    const url = await this.urlRepository.findByShortCode(shortCode);
     if (!url) throw new NotFoundException('URL not found');
+
+    this.urlRepository.incrementClicks(url.id).catch((err) => {
+      console.error('Failed to increment clicks:', err);
+    });
 
     return url.original;
   }
 
   async findAllByUser(userId: string) {
-    return this.prisma.url.findMany({
-      where: { userId: parseInt(userId) },
-      orderBy: { createdAt: 'desc' },
-    });
+    const urls = await this.urlRepository.findAllByUserId(parseInt(userId));
+    const baseUrl = this.urlBuilder.getBaseUrl();
+
+    return urls.map((url) => url.toListItem(baseUrl));
   }
 
   async release(id: string, userId: string) {
-    const url = await this.prisma.url.findUnique({
-      where: { id },
-    });
+    const url = await this.urlRepository.findById(id);
 
-    if (!url || url.userId !== parseInt(userId)) {
-      throw new NotFoundException('URL not found or unauthorized');
+    if (!url) {
+      throw new NotFoundException('URL not found');
     }
 
-    await this.prisma.url.delete({ where: { id } });
+    if (!url.isOwnedBy(parseInt(userId))) {
+      throw new ForbiddenException('You do not own this URL');
+    }
+
+    await this.urlRepository.delete(id);
 
     return { success: true, message: 'URL released successfully' };
   }

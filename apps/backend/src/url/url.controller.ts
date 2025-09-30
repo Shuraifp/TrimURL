@@ -3,30 +3,35 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Post,
   Request,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { UrlService } from './url.service';
 import { AuthGuard } from '@nestjs/passport';
-import { toURLList } from './mappers/toURLList';
+import type { IUrlService } from './interfaces/url-service.interface';
+import { ShortenDto } from './dto/shorten.dto';
+import { URL_SERVICE_TOKEN } from './url.tokens';
 
 @Controller('url')
 export class UrlController {
-  constructor(private readonly urlService: UrlService) {}
+  constructor(
+    @Inject(URL_SERVICE_TOKEN)
+    private readonly urlService: IUrlService,
+  ) {}
 
   @UseGuards(AuthGuard('jwt'))
   @Post('shorten')
-  async shorten(@Body('original') original: string, @Request() req) {
-    return this.urlService.shorten(original, req.user.userId);
+  async shorten(@Body() dto: ShortenDto, @Request() req) {
+    return this.urlService.shorten(dto.original, req.user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('my/list')
   async list(@Request() req) {
-    return toURLList(await this.urlService.findAllByUser(req.user.userId));
+    return this.urlService.findAllByUser(req.user.userId)
   }
 
   @UseGuards(AuthGuard('jwt'))

@@ -1,18 +1,17 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, Inject, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import { UrlService } from './url/url.service';
+import type { IUrlService } from './url/interfaces/url-service.interface';
+import { URL_SERVICE_TOKEN } from './url/url.tokens';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService,
-    private readonly urlService: UrlService,
+    @Inject(URL_SERVICE_TOKEN)
+    private readonly urlService: IUrlService,
   ) {}
 
   @Get(':shortCode')
   async redirect(@Param('shortCode') shortCode: string, @Res() res: Response) {
-    console.log(shortCode);
     const original = await this.urlService.resolve(shortCode);
     return res.redirect(original);
   }
