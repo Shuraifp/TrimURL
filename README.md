@@ -95,7 +95,6 @@ trim-url/ (monorepo)
 │   │   ├── src/
 │   │   │   ├── auth/      # Authentication module
 │   │   │   ├── url/       # URL shortening module
-│   │   │   ├── user/      # User management module
 │   │   │   ├── common/    # Shared utilities
 │   │   │   │   ├── decorators/
 │   │   │   │   ├── guards/
