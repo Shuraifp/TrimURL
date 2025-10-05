@@ -449,7 +449,7 @@ This project is open-source under the [MIT License](LICENSE).
 
 **Muhammed Shuraif**
 - GitHub: [@Shuraifp](https://github.com/Shuraifp)
-- Email: shuraifp@gmail.com
+- Email: msharraf258@gmail.com
 
 ---
 
